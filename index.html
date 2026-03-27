@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>替身無極 - 線上閱讀</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #1a1a2e;
+      --bg-sidebar: #16213e;
+      --bg-content: #0f3460;
+      --text: #e0e0e0;
+      --text-muted: #8899aa;
+      --accent: #e94560;
+      --accent-hover: #ff6b81;
+      --border: #1a3a5c;
+      --chapter-hover: #1a3a5c;
+      --chapter-active: #e94560;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Microsoft JhengHei', '微軟正黑體', 'PingFang TC', 'Noto Sans TC', sans-serif;
+      font-size: 18px;
+      line-height: 1.9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      background: var(--bg-sidebar);
+      border-bottom: 2px solid var(--accent);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    h1 {
+      font-size: 24px;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+
+    .status-badge {
+      background: var(--accent);
+      color: #fff;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    #menu-toggle {
+      display: none;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .nav-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .nav-btn {
+      background: var(--bg-content);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+    .nav-btn:hover:not(:disabled) { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .nav-btn:disabled { opacity: 0.4; cursor: default; }
+
+    #chapter-counter {
+      color: var(--text-muted);
+      font-size: 14px;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    /* Layout */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 300px;
+      min-width: 300px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      height: calc(100vh - 64px);
+      position: sticky;
+      top: 64px;
+    }
+
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      font-weight: bold;
+      color: var(--accent);
+      font-size: 16px;
+    }
+
+    .chapter-list {
+      list-style: none;
+    }
+
+    .chapter-list li {
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .chapter-list a {
+      display: block;
+      padding: 10px 16px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 14px;
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .chapter-list a:hover {
+      background: var(--chapter-hover);
+      color: var(--text);
+    }
+    .chapter-list a.active {
+      background: var(--accent);
+      color: #fff;
+      font-weight: bold;
+    }
+
+    /* Content */
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      height: calc(100vh - 64px);
+      padding: 40px;
+    }
+
+    .content-inner {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    #chapter-title {
+      font-size: 28px;
+      color: var(--accent);
+      margin-bottom: 32px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--border);
+      line-height: 1.4;
+    }
+
+    #chapter-content {
+      font-size: 18px;
+      line-height: 2;
+    }
+
+    #chapter-content p {
+      margin-bottom: 1em;
+      text-indent: 2em;
+    }
+
+    #chapter-content h1, #chapter-content h2, #chapter-content h3 {
+      color: var(--accent);
+      margin: 1.5em 0 0.8em;
+    }
+
+    #chapter-content hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2em 0;
+    }
+
+    #chapter-content blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 16px;
+      margin: 1em 0;
+      color: var(--text-muted);
+    }
+
+    #chapter-content strong {
+      color: var(--accent-hover);
+    }
+
+    /* Welcome screen */
+    .welcome {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+    }
+    .welcome h2 { color: var(--accent); font-size: 32px; margin-bottom: 16px; }
+    .welcome p { font-size: 16px; margin-bottom: 8px; }
+
+    /* Bottom nav */
+    .bottom-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* Scroll to top */
+    #scroll-top {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 44px;
+      height: 44px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+      transition: background 0.2s;
+    }
+    #scroll-top:hover { background: var(--accent-hover); }
+    #scroll-top.visible { display: flex; }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      #menu-toggle { display: block; }
+
+      .sidebar {
+        position: fixed;
+        left: -300px;
+        top: 0;
+        height: 100vh;
+        z-index: 300;
+        transition: left 0.3s;
+      }
+      .sidebar.open {
+        left: 0;
+      }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 250;
+      }
+      .sidebar-overlay.open { display: block; }
+
+      .content-area {
+        height: calc(100vh - 64px);
+        padding: 24px 16px;
+      }
+
+      h1 { font-size: 18px; }
+      #chapter-title { font-size: 22px; }
+      #chapter-content { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <button id="menu-toggle" onclick="toggleSidebar()">&#9776; 目錄</button>
+    <h1>替身無極</h1>
+    <span class="status-badge">已完結 &#183; 140章</span>
+  </div>
+  <div class="nav-controls">
+    <button class="nav-btn" id="prev-btn" onclick="navigate(-1)" disabled>&laquo; 上一章</button>
+    <span id="chapter-counter">-</span>
+    <button class="nav-btn" id="next-btn" onclick="navigate(1)" disabled>下一章 &raquo;</button>
+  </div>
+</header>
+
+<div class="main-layout">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">&#128214; 章節目錄（140章）</div>
+    <ul class="chapter-list" id="chapter-list"></ul>
+  </nav>
+  <main class="content-area" id="content-area">
+    <div class="content-inner">
+      <div class="welcome" id="welcome">
+        <h2>替身無極</h2>
+        <p>全 140 章 &#183; 已完結</p>
+        <p style="margin-top: 24px; color: #e94560;">&#8592; 從左側目錄選擇章節開始閱讀</p>
+      </div>
+      <h2 id="chapter-title" style="display:none"></h2>
+      <div id="chapter-content"></div>
+      <div class="bottom-nav" id="bottom-nav" style="display:none">
+        <button class="nav-btn" id="prev-btn-b" onclick="navigate(-1)">&laquo; 上一章</button>
+        <span id="chapter-counter-b"></span>
+        <button class="nav-btn" id="next-btn-b" onclick="navigate(1)">下一章 &raquo;</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<button id="scroll-top" onclick="document.getElementById('content-area').scrollTo({top:0,behavior:'smooth'})">&#8679;</button>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+const chapters = [
+  "第01章_加班猝死不是吧.md",
+  "第02章_金球裂了裡面有兩個人.md",
+  "第03章_荒野生存第一天.md",
+  "第04章_這個世界不太對.md",
+  "第05章_蒼雲城.md",
+  "第06章_你是體契者.md",
+  "第07章_城裡的規矩.md",
+  "第08章_銀色靈狐.md",
+  "第09章_拳頭vs靈狐.md",
+  "第10章_你很有意思.md",
+  "第11章_蘇家的邀請.md",
+  "第12章_四大家族.md",
+  "第13章_蘇家試探.md",
+  "第14章_這小子深不可測.md",
+  "第15章_蒼雲城暗流.md",
+  "第16章_路見不平.md",
+  "第17章_陳家的契將.md",
+  "第18章_你們看得見嗎.md",
+  "第19章_看不見的拳頭.md",
+  "第20章_全城震動.md",
+  "第21章_陳家震怒.md",
+  "第22章_蘇念卿的情報.md",
+  "第23章_包圍.md",
+  "第24章_白金之星的極限.md",
+  "第25章_絕境之中.md",
+  "第26章_一體三身.md",
+  "第27章_這不是人類能有的力量.md",
+  "第28章_蒼雲城的新秩序.md",
+  "第29章_霜翎感覺到了.md",
+  "第30章_遠方的注視.md",
+  "第31章_名聲是雙刃劍.md",
+  "第32章_赫連家的使者.md",
+  "第33章_蘇念卿的麻煩.md",
+  "第34章_慕容家少主.md",
+  "第35章_比武招親什麼年代了.md",
+  "第36章_擂台.md",
+  "第37章_我也來試試.md",
+  "第38章_你到底是什麼人.md",
+  "第39章_蘇念卿的選擇.md",
+  "第40章_慕容家的報復.md",
+  "第41章_離開蒼雲城.md",
+  "第42章_旅途日常.md",
+  "第43章_黃金體驗的新用法.md",
+  "第44章_被遺忘的村莊.md",
+  "第45章_契王級魔獸.md",
+  "第46章_苦戰.md",
+  "第47章_黃金體驗的妙手.md",
+  "第48章_擊殺契王級魔獸.md",
+  "第49章_精神金球再次共鳴.md",
+  "第50章_白金之星OverDrive.md",
+  "第51章_一秒的神.md",
+  "第52章_天契城.md",
+  "第53章_天契大比.md",
+  "第54章_報名.md",
+  "第55章_預賽屠殺.md",
+  "第56章_蘇念卿的戰鬥.md",
+  "第57章_八強.md",
+  "第58章_四強_赫連家的契王.md",
+  "第59章_一秒足矣.md",
+  "第60章_天契城沸騰.md",
+  "第61章_天契大比冠軍.md",
+  "第62章_四大家族會議.md",
+  "第63章_蘇家的保護.md",
+  "第64章_慕容家的殺手.md",
+  "第65章_黃金蛇網.md",
+  "第66章_時停獵殺.md",
+  "第67章_戰書.md",
+  "第68章_契聖的壓迫感.md",
+  "第69章_不可逾越的牆.md",
+  "第70章_蘇念卿擋在前面.md",
+  "第71章_憤怒.md",
+  "第72章_白金之星TheWorld.md",
+  "第73章_五秒的暴風雨.md",
+  "第74章_黃金體驗Life.md",
+  "第75章_退場.md",
+  "第76章_療傷.md",
+  "第77章_你真的很煩.md",
+  "第78章_傳說中的無契之人.md",
+  "第79章_上古遺跡.md",
+  "第80章_出發.md",
+  "第81章_遺跡守衛.md",
+  "第82章_五秒碾壓.md",
+  "第83章_遺跡內部.md",
+  "第84章_赫連家也來了.md",
+  "第85章_三方混戰.md",
+  "第86章_赫連家的契聖長老.md",
+  "第87章_The_World的五秒.md",
+  "第88章_遺跡核心.md",
+  "第89章_蘇念卿的覺醒.md",
+  "第90章_有人在等我們回去.md",
+  "第91章_歸來.md",
+  "第92章_白無極參戰.md",
+  "第93章_邪修的力量.md",
+  "第94章_邪修首領.md",
+  "第95章_蘇家參戰.md",
+  "第96章_四大家族聯手.md",
+  "第97章_前線崩潰.md",
+  "第98章_白無極vs邪修首領上.md",
+  "第99章_白無極vs邪修首領下.md",
+  "第100章_蘇念卿受困.md",
+  "第101章_再一次為了她.md",
+  "第102章_白金之星Eternal.md",
+  "第103章_十秒的神域.md",
+  "第104章_黃金體驗Requiem.md",
+  "第105章_邪修首領的末路.md",
+  "第106章_戰後.md",
+  "第107章_真正的敵人.md",
+  "第108章_蘇念卿的告白.md",
+  "第109章_契神的傳說.md",
+  "第110章_封印鬆動.md",
+  "第111章_金球的記憶.md",
+  "第112章_精神力的起源.md",
+  "第113章_契神的陰謀.md",
+  "第114章_白無極的使命.md",
+  "第115章_備戰.md",
+  "第116章_蘇念卿的突破.md",
+  "第117章_盟友們.md",
+  "第118章_封印之地.md",
+  "第119章_封印崩碎.md",
+  "第120章_契神.md",
+  "第121章_神的力量.md",
+  "第122章_聯軍出擊.md",
+  "第123章_螳臂當車.md",
+  "第124章_白無極出手.md",
+  "第125章_規則之外vs規則制定者.md",
+  "第126章_僵局.md",
+  "第127章_契神的嘲諷.md",
+  "第128章_蘇念卿的支援.md",
+  "第129章_契神反擊.md",
+  "第130章_只剩我們了.md",
+  "第131章_不會讓你碰她.md",
+  "第132章_精神金球的最後共鳴.md",
+  "第133章_白金體驗：Star_of_Creation.md",
+  "第134章_創世之星.md",
+  "第135章_規則？我來寫.md",
+  "第136章_契神隕落.md",
+  "第137章_靈契回歸.md",
+  "第138章_新的天衍.md",
+  "第139章_回家嗎.md",
+  "第140章_替身無極.md"
+];
+
+let currentIndex = -1;
+const cache = {};
+
+function getDisplayName(filename) {
+  return filename.replace('.md', '').replace(/_/g, ' ');
+}
+
+function init() {
+  const list = document.getElementById('chapter-list');
+  chapters.forEach((ch, i) => {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.textContent = getDisplayName(ch);
+    a.dataset.index = i;
+    a.onclick = () => loadChapter(i);
+    li.appendChild(a);
+    list.appendChild(li);
+  });
+
+  // Check URL hash
+  const hash = location.hash.replace('#', '');
+  if (hash) {
+    const idx = parseInt(hash) - 1;
+    if (idx >= 0 && idx < chapters.length) loadChapter(idx);
+  }
+}
+
+async function loadChapter(index) {
+  if (index < 0 || index >= chapters.length) return;
+  currentIndex = index;
+
+  const filename = chapters[index];
+  const title = getDisplayName(filename);
+
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('chapter-title').style.display = 'block';
+  document.getElementById('chapter-title').textContent = title;
+  document.getElementById('bottom-nav').style.display = 'flex';
+
+  // Update active state in sidebar
+  document.querySelectorAll('.chapter-list a').forEach(a => a.classList.remove('active'));
+  const activeLink = document.querySelector(`.chapter-list a[data-index="${index}"]`);
+  if (activeLink) {
+    activeLink.classList.add('active');
+    activeLink.scrollIntoView({ block: 'nearest' });
+  }
+
+  // Update navigation
+  updateNav();
+  location.hash = index + 1;
+
+  // Load content
+  const contentEl = document.getElementById('chapter-content');
+  if (cache[filename]) {
+    contentEl.innerHTML = cache[filename];
+  } else {
+    contentEl.innerHTML = '<div class="loading">載入中...</div>';
+    try {
+      const resp = await fetch(encodeURI(filename));
+      if (!resp.ok) throw new Error('載入失敗');
+      const md = await resp.text();
+      // Remove first heading if it matches chapter title
+      const html = marked.parse(md);
+      cache[filename] = html;
+      contentEl.innerHTML = html;
+    } catch (e) {
+      contentEl.innerHTML = `<div class="loading">載入失敗：${e.message}</div>`;
+    }
+  }
+
+  document.getElementById('content-area').scrollTo({ top: 0 });
+
+  // Close sidebar on mobile
+  if (window.innerWidth <= 768) toggleSidebar(false);
+}
+
+function navigate(dir) {
+  loadChapter(currentIndex + dir);
+}
+
+function updateNav() {
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex < chapters.length - 1;
+  document.getElementById('prev-btn').disabled = !hasPrev;
+  document.getElementById('next-btn').disabled = !hasNext;
+  document.getElementById('prev-btn-b').disabled = !hasPrev;
+  document.getElementById('next-btn-b').disabled = !hasNext;
+  const counter = `${currentIndex + 1} / ${chapters.length}`;
+  document.getElementById('chapter-counter').textContent = counter;
+  document.getElementById('chapter-counter-b').textContent = counter;
+}
+
+function toggleSidebar(forceState) {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const isOpen = typeof forceState === 'boolean' ? !forceState : sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', !isOpen);
+  overlay.classList.toggle('open', !isOpen);
+}
+
+// Scroll to top button
+document.getElementById('content-area').addEventListener('scroll', function() {
+  document.getElementById('scroll-top').classList.toggle('visible', this.scrollTop > 300);
+});
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft') navigate(-1);
+  if (e.key === 'ArrowRight') navigate(1);
+});
+
+init();
+</script>
+</body>
+</html>
